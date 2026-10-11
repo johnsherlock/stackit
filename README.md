@@ -7,7 +7,9 @@ Playable modes:
 - **UH OH!** (2–5 players) and **UH OH! PARTY** (6–10, two DECKs, bigger table). Any seat can be a
   human or a bot. Several humans share one device (pass and play), and hands are hidden between turns.
 
-Play it at **https://johnsherlock.github.io/stackit/**.
+Play it at **https://johnsherlock.github.io/stackit/**. It's an installable web app (PWA): on a
+phone use *Add to Home Screen* (iPhone, Safari's share menu) or *Install app* (Android, Chrome's
+menu) and it opens full screen from its own icon, and works offline once loaded.
 
 ```sh
 npm install
