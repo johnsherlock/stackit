@@ -7,12 +7,17 @@ Playable modes:
 - **UH OH!** (2–5 players) and **UH OH! PARTY** (6–10, two DECKs, bigger table). Any seat can be a
   human or a bot. Several humans share one device (pass and play), and hands are hidden between turns.
 
+Play it at **https://johnsherlock.github.io/stackit/**.
+
 ```sh
 npm install
 npm run dev     # http://localhost:5173
 npm test        # engine tests
 npm run build
 ```
+
+Every push to `main` runs the tests, builds, and publishes to GitHub Pages
+(`.github/workflows/deploy.yml`).
 
 Controls: pick a card, then click a highlighted spot to STACK it. Wilds: click a spot, click
 again or press **R** to rotate, call a suit (UH OH!), then **Enter** to place. Drag to pan,
