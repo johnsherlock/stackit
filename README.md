@@ -42,7 +42,9 @@ surface the new card **fully** covers is a surface it's played onto. Each one mu
 blocked by a ZERO, and there must be at least one. Some surfaces can never be played on (a
 number's FACE, a letter's SIDE, a Wild's side and face). Once a card has nothing else left to play
 on, it's out of play (dimmed), and a card may cover those dead surfaces freely. While the card is
-still in play, a dead surface can't be covered. A card never goes exactly on top of another one. A card may also overhang a lower
+still in play, a dead surface can't be covered. If one spot covers live surfaces that no card could
+ever match together (say a King's FACE and a 0's SIDE), the newest card's surface counts and the
+older ones are blocked. A card never goes exactly on top of another one. A card may also overhang a lower
 card and half-cover one of its surfaces. That half-covered surface is then blocked: nothing can be
 played onto it. But a card can't be tucked in directly below another card, cutting into the bottom of
 its FACE and SIDE.

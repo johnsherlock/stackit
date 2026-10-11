@@ -108,6 +108,26 @@ describe('the fourth position', () => {
     expect(visibleSurfaces(board, 1)).toEqual(['top', 'face', 'side']);
   });
 
+  it("when a spot's surfaces can never match together, the newest card's wins", () => {
+    // A spot that is both a 0's SIDE and a King's FACE: no card is a King and a 0.
+    const zeroSide = coveringPos(ORIGIN, 'side', 0);
+    const kingPos = add(zeroSide, DIRS[0]);
+    expect(coveringPos(kingPos, 'face', 0)).toEqual(zeroSide);
+    const at = { pos: zeroSide, rotation: 0 };
+
+    // Reported game: the K♠ came after the 0♦, so the K♠'s FACE wins and the 0's SIDE is blocked.
+    let kingLast = start(card(0, 'diamonds'));
+    kingLast = { ...kingLast, placed: [...kingLast.placed, { card: card('K', 'spades'), pos: kingPos, rotation: 0 }] };
+    expect(checkPlacement(kingLast, card('K', 'hearts'), at).ok).toBe(true);
+    expect(checkPlacement(kingLast, card(0, 'clubs'), at).ok).toBe(false);
+
+    // The other way round, the 0 wins.
+    let zeroLast = start(card('K', 'spades'));
+    zeroLast = { ...zeroLast, placed: [{ ...zeroLast.placed[0], pos: kingPos }, { card: card(0, 'diamonds'), pos: ORIGIN, rotation: 0 }] };
+    expect(checkPlacement(zeroLast, card(0, 'clubs'), at).ok).toBe(true);
+    expect(checkPlacement(zeroLast, card('K', 'hearts'), at).ok).toBe(false);
+  });
+
   it('a card with only dead surfaces left is out of play', () => {
     // The 4♠ only shows its FACE, and a number's FACE takes nothing.
     expect(outOfPlay(board, 0)).toBe(true);

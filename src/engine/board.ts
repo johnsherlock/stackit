@@ -1,4 +1,4 @@
-import { type Card, type Suit, isLetter, isNumber, isWild } from './cards';
+import { type Card, type Suit, createDeck, isLetter, isNumber, isWild } from './cards';
 import {
   type Bounds,
   type Pos,
@@ -116,18 +116,59 @@ function canEverMatch(target: PlacedCard, surface: Surface): boolean {
   return surface === 'side' ? isNumber(target.card) : isLetter(target.card);
 }
 
+/** One of every card, to test whether some card could match a set of surfaces at once. */
+const ANY_CARD = createDeck({ decks: 1, includeWilds: true });
+
+/** Could one card, turned some legal way, be played onto all of these surfaces at once? */
+function canMatchAll(board: Board, onto: Contact[]): boolean {
+  const targets = onto.map((c) => board.placed[c.touch.index]);
+  for (let rotation = 0; rotation < ROTATIONS; rotation++) {
+    for (const card of ANY_CARD) {
+      const linedUp = targets.every((t) =>
+        isWild(card) ? wildTurns(t.rotation).includes(rotation) : t.rotation === rotation,
+      );
+      if (linedUp && onto.every((c, i) => surfaceAccepts(targets[i], c.touch.surface, card))) return true;
+    }
+  }
+  return false;
+}
+
 /**
- * The surfaces a card is played onto: every one it fully covers, except a dead surface
- * (a number's FACE, a letter's SIDE, a Wild's sides) on a card that is already out of play.
- * Covering those changes nothing. A dead surface on a card still in play has to "match",
- * which nothing can, so it can't be covered.
+ * The live surfaces a spot has to match. When no card could match them all (say a King's
+ * FACE and a 0's SIDE), the newest card's surface wins and the older ones it conflicts with
+ * are blocked: nothing will ever be played onto them.
+ */
+function liveRequirements(board: Board, found: Contact[]): Contact[] {
+  const live = found.filter((c) => c.full && canEverMatch(board.placed[c.touch.index], c.touch.surface));
+  if (live.length < 2) return live;
+  const kept: Contact[] = [];
+  for (const c of [...live].sort((x, y) => y.touch.index - x.touch.index)) {
+    if (kept.length === 0 || canMatchAll(board, [...kept, c])) kept.push(c);
+  }
+  return kept;
+}
+
+/**
+ * The surfaces a card at this spot is played onto, and so must match: the live ones (see
+ * `liveRequirements`), plus any dead surface (a number's FACE, a letter's SIDE, a Wild's
+ * sides) on a card still in play. Nothing can match those, so the spot can't be used.
+ * Dead surfaces on cards already out of play can be covered freely.
  */
 function playedOnto(board: Board, found: Contact[], cover: Map<string, Cover>): Contact[] {
-  return found.filter((c) => {
-    if (!c.full) return false;
-    const target = board.placed[c.touch.index];
-    return canEverMatch(target, c.touch.surface) || !outOfPlay(board, c.touch.index, cover);
-  });
+  const deadInPlay = found.filter(
+    (c) =>
+      c.full &&
+      !canEverMatch(board.placed[c.touch.index], c.touch.surface) &&
+      !outOfPlay(board, c.touch.index, cover),
+  );
+  return [...liveRequirements(board, found), ...deadInPlay];
+}
+
+/** Has a newer card made this surface impossible to play onto (see `liveRequirements`)? */
+function conflictBlocked(board: Board, index: number, surface: Surface, cover: Map<string, Cover>): boolean {
+  const target = board.placed[index];
+  const found = contacts(board, coveringPos(target.pos, surface, target.rotation), cover);
+  return !liveRequirements(board, found).some((c) => c.touch.index === index && c.touch.surface === surface);
 }
 
 /** The visible surfaces a card at `pos` would overlap, and whether it covers each one fully. */
@@ -285,7 +326,9 @@ export function visibleSurfaces(board: Board, index: number, cover = visibleCove
 /** Out of play: no surface left that anything could ever be played onto. */
 export function outOfPlay(board: Board, index: number, cover = visibleCover(board)): boolean {
   const target = board.placed[index];
-  return !visibleSurfaces(board, index, cover).some((surface) => canEverMatch(target, surface));
+  return !visibleSurfaces(board, index, cover).some(
+    (surface) => canEverMatch(target, surface) && !conflictBlocked(board, index, surface, cover),
+  );
 }
 
 /**
